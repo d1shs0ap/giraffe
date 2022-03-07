@@ -1,0 +1,9 @@
+@import '~antd/dist/antd.css';
+
+#map { height: 180px; }
+
+.leaflet-container{
+  width: 100%;
+  height: 100%;
+}
+  
