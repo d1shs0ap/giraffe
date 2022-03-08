@@ -1,5 +1,12 @@
 from flask import Flask, request, jsonify
-from flask_cors import CORS, cross_origin
+from flask_cors import CORS
+
+import sys
+sys.path.insert(1, '../../pyserini')
+
+from pyserini.search.lucene import LuceneGeoSearcher
+from pyserini.search.lucene._geo_searcher import JSort, JLatLonDocValuesField, JLatLonShape, JQueryRelation
+from pyserini.search.lucene._base import JQuery
 
 app = Flask(__name__)
 CORS(app)
@@ -11,14 +18,31 @@ def rivers_search():
     req = request.json
     
     print(req['searchText'])
+
+    # get mouths of river coords from req['searchText']. list of [lat, lon]
     
-    # below functionalities should be executed:
-      # get mouths of river coords from req['searchText']
-      # get river segments from mouths of geo coords
-      # trace upstream to get entire rivers
-      # return json containing matching rivers coords and metadata
+
+    # get river segments from mouths of geo coords
+    searcher = LuceneGeoSearcher('indexes/hydrorivers')
+    query = JLatLonShape.newBoxQuery("geometry", JQueryRelation.INTERSECTS, 43, 44, -78, -77);
+    hits = searcher.search(query)
+    print(hits)
+    # trace upstream to get entire rivers
     
+
+    # return json containing matching rivers coords and metadata
     return jsonify({"hi": "bye"})
   
   elif request.method == 'GET':
     return "This is the endpoint for geo search."
+
+
+def props(cls):   
+  return [i for i in cls.__dict__.keys() if i[:1] != '_']
+
+if __name__ == "__main__":
+  searcher = LuceneGeoSearcher('indexes/hydrorivers')
+  print(props(JQueryRelation))
+  query = JLatLonShape.newBoxQuery("geometry", JQueryRelation.INTERSECTS, 43, 44, -78, -77);
+  hits = searcher.search(query)
+  print(hits[0].raw)
