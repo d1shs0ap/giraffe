@@ -6,7 +6,6 @@ sys.path.insert(1, '../../pyserini')
 
 from pyserini.search.lucene import LuceneGeoSearcher
 from pyserini.search.lucene._geo_searcher import JSort, JLatLonDocValuesField, JLatLonShape, JQueryRelation
-from pyserini.search.lucene._base import JQuery
 
 app = Flask(__name__)
 CORS(app)
@@ -43,6 +42,8 @@ def props(cls):
 if __name__ == "__main__":
   searcher = LuceneGeoSearcher('indexes/hydrorivers')
   print(props(JQueryRelation))
-  query = JLatLonShape.newBoxQuery("geometry", JQueryRelation.INTERSECTS, 43, 44, -78, -77);
-  hits = searcher.search(query)
+
+  query = JLatLonShape.newBoxQuery("geometry", JQueryRelation.INTERSECTS, 43, 44, -78, -77)
+  sort = JSort(JLatLonDocValuesField.newDistanceSort("point", -35, 0))
+  hits = searcher.search(query, 2, sort)
   print(hits[0].raw)
