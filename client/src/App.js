@@ -1,15 +1,25 @@
-import { useState, useMemo } from 'react';
-import { MapContainer, TileLayer, useMap, Polyline } from 'react-leaflet';
+import { useState, useEffect } from 'react';
+import { MapContainer, TileLayer, useMap, Polyline, Polygon } from 'react-leaflet';
 import { Layout, Input, List } from 'antd';
 import './App.css';
 
-const { Header, Content, Footer, Sider } = Layout;
+const { Sider } = Layout;
 const { Search } = Input;
 
-function Rivers({results}) {
+function Rivers({results, selected}) {
+  const map = useMap();
+  
+  useEffect(() => {
+    if (results && results.length > selected) {
+      map.flyToBounds(results[selected].bounds, {padding: [11, 11]});
+    }
+  }, [selected, results]);
+  
   return (
     <>
-      {results?.map((result, i) => <Polyline positions={result.geometry} />)}
+      {results?.map(result => result.basin_geometry?.map(poly => <Polygon positions={poly} pathOptions={result.key === selected ? { color: '#66a9c9'} : { color: '#baccd9'}}/>))}
+      {results?.map(result => <Polyline positions={result.geometry} pathOptions={result.key === selected ? { color: '#3c9566'} : { color: '#c0c4c3'}}/>)}
+      {results?.map(result => <Polyline positions={result.main_riv_geometry} pathOptions={result.key === selected ? { color: 'black'} : { color: '#c0c4c3'}}/>)}
     </>
   )
 }
@@ -17,6 +27,7 @@ function Rivers({results}) {
 
 function App() {
   const [results, setResults] = useState();
+  const [selected, setSelected] = useState(0);
   const [loading, setLoading] = useState(false);
 
   async function onSearch(value) {
@@ -36,6 +47,7 @@ function App() {
     
     console.log(data);
     setResults(data);
+    setSelected(0);
    
     setLoading(false);
   }
@@ -44,15 +56,16 @@ function App() {
     <div className="App">
       <Layout style={{ minHeight: '100vh' }}>
         <Sider width={400} theme='light'>
-          <Search placeholder="input search text" onSearch={onSearch} loading={loading} style={{ width: 380, marginRight: 10, marginLeft: 10, marginTop: 20 }} />
+          <Search placeholder="enter river name" onSearch={onSearch} loading={loading} style={{ width: 380, marginRight: 10, marginLeft: 10, marginTop: 20 }} />
           <List
             dataSource={results}
             style={{ margin: 10 }}
             renderItem={item => (
-              <List.Item>
+              <List.Item onClick={() => setSelected(item.key)} style={item.key === selected ? {backgroundColor: 'gainsboro'} : {}}>
                 <List.Item.Meta
                   title={item.contents}
                   description={item.description}
+                  style={{ margin: 10 }}
                 />
               </List.Item>
             )}
@@ -62,9 +75,9 @@ function App() {
           <MapContainer center={[43.4643, -80.5204]} zoom={13}>
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              url="http://a.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png"
             />
-            <Rivers results={results}/>
+            <Rivers results={results} selected={selected}/>
           </MapContainer>
         </Layout>
       </Layout>
